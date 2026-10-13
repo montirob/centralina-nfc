@@ -27,7 +27,8 @@
       panelOver: (z & 2) !== 0,
       vddaMv: num(params, "a"),             // MCU supply = ADC reference, null on older firmware
       tempDc: num(params, "c"),             // tenths of C, null if no NTC
-      rainTauMs: num(params, "w"),          // rain: discharge time constant (ms), max = dry
+      rainTauMs: num(params, "w"),          // rain: discharge time constant (ms), older firmware only
+      rainBase: num(params, "g"),           // rain: dry reference of the charge transfer cycles
       raining: num(params, "y") === 1,
       rainCt: num(params, "q"),             // charge transfer: threshold reached (ADC raw)...
       rainCycles: num(params, "m"),         // ...after this many cycles (fewer = more capacitance)
@@ -94,7 +95,11 @@
     out.push({ label: "Temperatura",
                value: d.tempDc === null ? "non disponibile" : (d.tempDc / 10).toFixed(1).replace(".", ",") + " °C",
                note: "" });
-    if (d.rainTauMs !== null) {
+    if (d.rainBase !== null && d.rainCycles !== null) {
+      out.push({ label: "Pioggia", value: d.raining ? "bagnato" : "asciutto",
+                 note: d.rainCycles + " cicli (asciutto " + d.rainBase + ")",
+                 level: d.raining ? "on" : "" });
+    } else if (d.rainTauMs !== null) {
       out.push({ label: "Pioggia", value: d.raining ? "bagnato" : "asciutto",
                  note: "scarica tau " + (d.rainTauMs >= 200 ? "> 200" : d.rainTauMs) + " ms",
                  level: d.raining ? "on" : "" });
