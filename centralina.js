@@ -29,8 +29,8 @@
       tempDc: num(params, "c"),             // tenths of C, null if no NTC
       rainTauMs: num(params, "w"),          // rain: discharge time constant (ms), max = dry
       raining: num(params, "y") === 1,
-      rainCt: num(params, "q"),             // capacitive reading after rainCycles cycles (ADC raw)
-      rainCycles: num(params, "m"),
+      rainCt: num(params, "q"),             // charge transfer: threshold reached (ADC raw)...
+      rainCycles: num(params, "m"),         // ...after this many cycles (fewer = more capacitance)
       rainSel0: num(params, "k"),           // diagnostics, see nfc_tag.h
       rainSel1: num(params, "h"),
       valveOpen: num(params, "o") === 1,
@@ -53,7 +53,7 @@
     return (over ? "> " : "") + (mv / 1000).toFixed(2).replace(".", ",") + " V";
   }
 
-  /* charge balancing: V/VDD = 1 - (C/(C+Ce))^N with C = 10 nF  ->  Ce = C ((1 - V/VDD)^(-1/N) - 1) */
+  /* charge transfer: V/VDD = 1 - (C/(C+Ce))^N with C = 10 nF  ->  Ce = C ((1 - V/VDD)^(-1/N) - 1) */
   function fmtPf(raw, cycles) {
     var x = raw / 4095;
     if (x >= 0.995) return "> " + Math.round(10000 * (Math.pow(0.005, -1 / cycles) - 1)) + " pF";
@@ -101,7 +101,7 @@
     }
     if (d.rainCt !== null && d.rainCycles) {
       out.push({ label: "Pioggia capacita", value: fmtPf(d.rainCt, d.rainCycles),
-                 note: "lettura " + d.rainCt + " dopo " + d.rainCycles + " cicli" });
+                 note: d.rainCycles + " cicli (soglia " + d.rainCt + ")" });
     }
     if (d.rainSel0 !== null && d.rainSel1 !== null) {
       out.push({ label: "Commutatore", value: Math.abs(d.rainSel1 - d.rainSel0) > 2000 ? "ok" : "non commuta",
