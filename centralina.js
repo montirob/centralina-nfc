@@ -25,6 +25,7 @@
       battOver: (z & 1) !== 0,
       panelMv: num(params, "p"),
       panelOver: (z & 2) !== 0,
+      vddaMv: num(params, "a"),             // MCU supply = ADC reference, null on older firmware
       tempDc: num(params, "c"),             // tenths of C, null if no NTC
       valveOpen: num(params, "o") === 1,
       minutesLeft: num(params, "r"),
@@ -71,6 +72,11 @@
                note: d.battOver ? "oltre il fondo scala della misura" : (d.battMv !== null && d.battMv < 3600 ? "bassa" : ""),
                level: d.battMv !== null && d.battMv < 3600 && !d.battOver ? "warn" : "" });
     out.push({ label: "Pannello", value: fmtVolt(d.panelMv, d.panelOver), note: "" });
+    if (d.vddaMv !== null) {
+      var vddOk = d.vddaMv >= 2700 && d.vddaMv <= 2900;
+      out.push({ label: "Alimentazione interna", value: fmtVolt(d.vddaMv, false),
+                 note: vddOk ? "" : "attesa 2,80 V (LDO)", level: vddOk ? "" : "warn" });
+    }
     out.push({ label: "Temperatura",
                value: d.tempDc === null ? "non disponibile" : (d.tempDc / 10).toFixed(1).replace(".", ",") + " °C",
                note: "" });
