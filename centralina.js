@@ -29,6 +29,9 @@
       tempDc: num(params, "c"),             // tenths of C, null if no NTC
       rainRaw: num(params, "w"),            // rain sensor raw reading (0..4095), null on older firmware
       raining: num(params, "y") === 1,
+      rainLong: num(params, "q"),           // diagnostics, see nfc_tag.h
+      rainSelLow: num(params, "k"),
+      rainSelHigh: num(params, "h"),
       valveOpen: num(params, "o") === 1,
       minutesLeft: num(params, "r"),
       activations: num(params, "n") || 0,
@@ -85,6 +88,10 @@
     if (d.rainRaw !== null) {
       out.push({ label: "Pioggia", value: d.raining ? "bagnato" : "asciutto",
                  note: "lettura sensore " + d.rainRaw, level: d.raining ? "on" : "" });
+    }
+    if (d.rainLong !== null && d.rainSelLow !== null && d.rainSelHigh !== null) {
+      out.push({ label: "Pioggia diagnostica", value: "x10: " + d.rainLong,
+                 note: "commutatore basso " + d.rainSelLow + " / alto " + d.rainSelHigh });
     }
     out.push({ label: "Valvola", value: d.valveOpen ? "aperta" : "chiusa",
                note: d.valveOpen && d.minutesLeft !== null ? "si chiude tra " + fmtMinutes(d.minutesLeft) : "",
