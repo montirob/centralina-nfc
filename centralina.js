@@ -27,6 +27,8 @@
       panelOver: (z & 2) !== 0,
       vddaMv: num(params, "a"),             // MCU supply = ADC reference, null on older firmware
       tempDc: num(params, "c"),             // tenths of C, null if no NTC
+      rainRaw: num(params, "w"),            // rain sensor raw reading (0..4095), null on older firmware
+      raining: num(params, "y") === 1,
       valveOpen: num(params, "o") === 1,
       minutesLeft: num(params, "r"),
       activations: num(params, "n") || 0,
@@ -80,6 +82,10 @@
     out.push({ label: "Temperatura",
                value: d.tempDc === null ? "non disponibile" : (d.tempDc / 10).toFixed(1).replace(".", ",") + " °C",
                note: "" });
+    if (d.rainRaw !== null) {
+      out.push({ label: "Pioggia", value: d.raining ? "bagnato" : "asciutto",
+                 note: "lettura sensore " + d.rainRaw, level: d.raining ? "on" : "" });
+    }
     out.push({ label: "Valvola", value: d.valveOpen ? "aperta" : "chiusa",
                note: d.valveOpen && d.minutesLeft !== null ? "si chiude tra " + fmtMinutes(d.minutesLeft) : "",
                level: d.valveOpen ? "on" : "" });
