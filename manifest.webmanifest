@@ -1,0 +1,8 @@
+{
+  "name": "Centralina irrigazione",
+  "short_name": "Centralina",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f3",
+  "theme_color": "#1f6f4a"
+}

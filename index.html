@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centralina irrigazione</title>
+<meta name="theme-color" content="#1f6f4a">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root {
+    --bg: #f4f6f3; --card: #ffffff; --text: #1d2420; --muted: #5f6b64; --line: #e3e8e4;
+    --accent: #1f6f4a; --warn: #b45309; --on: #1d6fb8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121614; --card: #1b211e; --text: #e8eee9; --muted: #9aa69f; --line: #2a322e;
+            --accent: #5cc08f; --warn: #f0a24a; --on: #6db3f2; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 20px 16px 32px; }
+  h1 { font-size: 1.3rem; margin: 4px 0 2px; color: var(--accent); }
+  .sub { color: var(--muted); font-size: .9rem; margin-bottom: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+         padding: 12px 14px; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .label { color: var(--muted); font-size: .9rem; }
+  .value { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+  .note { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+  .warn .value { color: var(--warn); }
+  .on .value { color: var(--on); }
+  .empty { padding: 24px 16px; text-align: center; color: var(--muted); }
+  footer { margin-top: 16px; color: var(--muted); font-size: .8rem; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Centralina irrigazione</h1>
+  <div class="sub" id="sub">Dati letti dal tag NFC</div>
+  <div class="card" id="card"></div>
+  <footer>I dati arrivano dal tag NFC e restano su questo telefono: la pagina non li invia a nessuno.</footer>
+</main>
+<script src="centralina.js"></script>
+<script>
+  function render() {
+    var card = document.getElementById("card");
+    var data = Centralina.parse(location.hash);
+    card.textContent = "";
+    if (!data) {
+      var p = document.createElement("div");
+      p.className = "empty";
+      p.textContent = "Avvicina il telefono al tag NFC della centralina per vedere i dati.";
+      card.appendChild(p);
+      return;
+    }
+    document.getElementById("sub").textContent =
+      "Letto il " + new Date().toLocaleString("it-IT", { day: "2-digit", month: "2-digit",
+                                                        hour: "2-digit", minute: "2-digit" });
+    Centralina.rows(data, Date.now()).forEach(function (r) {
+      var row = document.createElement("div");
+      row.className = "row" + (r.level ? " " + r.level : "");
+      var label = document.createElement("span");
+      label.className = "label";
+      label.textContent = r.label;
+      var value = document.createElement("span");
+      value.className = "value";
+      value.textContent = r.value;
+      if (r.note) {
+        var note = document.createElement("span");
+        note.className = "note";
+        note.textContent = r.note;
+        value.appendChild(note);
+      }
+      row.appendChild(label);
+      row.appendChild(value);
+      card.appendChild(row);
+    });
+  }
+  window.addEventListener("hashchange", render);   // a new tag read while the page is open
+  render();
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
