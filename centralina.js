@@ -27,11 +27,12 @@
       panelOver: (z & 2) !== 0,
       vddaMv: num(params, "a"),             // MCU supply = ADC reference, null on older firmware
       tempDc: num(params, "c"),             // tenths of C, null if no NTC
-      rainRaw: num(params, "w"),            // rain sensor raw reading (0..4095), null on older firmware
+      rainTauMs: num(params, "w"),          // rain: discharge time constant (ms), max = dry
       raining: num(params, "y") === 1,
-      rainLong: num(params, "q"),           // diagnostics, see nfc_tag.h
-      rainSelLow: num(params, "k"),
-      rainSelHigh: num(params, "h"),
+      rainCt: num(params, "q"),             // capacitive reading after rainCycles cycles (ADC raw)
+      rainCycles: num(params, "m"),
+      rainSel0: num(params, "k"),           // diagnostics, see nfc_tag.h
+      rainSel1: num(params, "h"),
       valveOpen: num(params, "o") === 1,
       minutesLeft: num(params, "r"),
       activations: num(params, "n") || 0,
@@ -50,6 +51,14 @@
   function fmtVolt(mv, over) {
     if (mv === null) return "-";
     return (over ? "> " : "") + (mv / 1000).toFixed(2).replace(".", ",") + " V";
+  }
+
+  /* charge balancing: V/VDD = 1 - (C/(C+Ce))^N with C = 10 nF  ->  Ce = C ((1 - V/VDD)^(-1/N) - 1) */
+  function fmtPf(raw, cycles) {
+    var x = raw / 4095;
+    if (x >= 0.995) return "> " + Math.round(10000 * (Math.pow(0.005, -1 / cycles) - 1)) + " pF";
+    var pf = 10000 * (Math.pow(1 - x, -1 / cycles) - 1);
+    return (pf < 10 ? pf.toFixed(1) : Math.round(pf)).toString().replace(".", ",") + " pF";
   }
 
   function fmtMinutes(min) {
@@ -85,13 +94,19 @@
     out.push({ label: "Temperatura",
                value: d.tempDc === null ? "non disponibile" : (d.tempDc / 10).toFixed(1).replace(".", ",") + " °C",
                note: "" });
-    if (d.rainRaw !== null) {
+    if (d.rainTauMs !== null) {
       out.push({ label: "Pioggia", value: d.raining ? "bagnato" : "asciutto",
-                 note: "lettura sensore " + d.rainRaw, level: d.raining ? "on" : "" });
+                 note: "scarica tau " + (d.rainTauMs >= 200 ? "> 200" : d.rainTauMs) + " ms",
+                 level: d.raining ? "on" : "" });
     }
-    if (d.rainLong !== null && d.rainSelLow !== null && d.rainSelHigh !== null) {
-      out.push({ label: "Pioggia diagnostica", value: "x10: " + d.rainLong,
-                 note: "commutatore basso " + d.rainSelLow + " / alto " + d.rainSelHigh });
+    if (d.rainCt !== null && d.rainCycles) {
+      out.push({ label: "Pioggia capacita", value: fmtPf(d.rainCt, d.rainCycles),
+                 note: "lettura " + d.rainCt + " dopo " + d.rainCycles + " cicli" });
+    }
+    if (d.rainSel0 !== null && d.rainSel1 !== null) {
+      out.push({ label: "Commutatore", value: Math.abs(d.rainSel1 - d.rainSel0) > 2000 ? "ok" : "non commuta",
+                 note: "basso " + d.rainSel0 + " / alto " + d.rainSel1,
+                 level: Math.abs(d.rainSel1 - d.rainSel0) > 2000 ? "" : "warn" });
     }
     out.push({ label: "Valvola", value: d.valveOpen ? "aperta" : "chiusa",
                note: d.valveOpen && d.minutesLeft !== null ? "si chiude tra " + fmtMinutes(d.minutesLeft) : "",

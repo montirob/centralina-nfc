@@ -1,7 +1,7 @@
 /* Offline cache: after the first visit the page opens even without internet,
  * which is the normal case next to the centralina. The data is in the URL
  * fragment, so the cached page is enough to show it. */
-var CACHE = "centralina-nfc-v4";
+var CACHE = "centralina-nfc-v5";
 var FILES = ["./", "index.html", "centralina.js", "manifest.webmanifest"];
 
 self.addEventListener("install", function (e) {
